@@ -7,7 +7,8 @@ const multer = require("multer");
 const path = require("path");
 const corse = require("cors");
 const { type } = require("os");
-const { error } = require("console");
+const { errors } = require("console");
+const { connected } = require("process");
 
 app.use(express.json());
 app.use(corse());
@@ -147,10 +148,10 @@ const Users = mongoose.model('Users',{
 
 //Creating Endpoint for registering the user
 app.post('/signup', async (req,res)=>{
-    let check = await Users.findOne({email:req.body});
+    let check = await Users.findOne({email:req.body.email});
     if (check) {
         return res.status(400).json({
-            success:false, error:"existing user found with the same email"
+            success:false, errors:"existing user found with the same email"
         })
     }
     let cart = {};
@@ -173,13 +174,39 @@ app.post('/signup', async (req,res)=>{
 
     const token = jwt.sign(data,'secret_ecom');
     res.json({success:true,token})
+
 })
 
+// creating endpoint for user login
+app.post('/login',async (req,res)=>{
+    let user = await Users.findOne({email:req.body.email});
+    if(user){
+        const passCompare = req.body.password === user.password;
+        if(passCompare){
+            const data = {
+                user:{
+                    id:user.id
+                }
+            }
+            const token = jwt.sign(data,'secret_ecom');
+            res.json({success:true,token})
+        }
+        else{
+            res.json({success:false, errors:"Wrong Password"});
+        }
+    }
+    else{
+        res.json({
+            success:false,
+            errors:"Wrong Email Id"
+        })
+    }
+})
 
-app.listen(port,(error)=>{
-    if(!error){
+app.listen(port,(errors)=>{
+    if(!errors){
         console.log("Server Running on Port "+port)
     }else{
-        console.log("Error: "+error)
+        console.log("errors: "+errors)
     }
 })
